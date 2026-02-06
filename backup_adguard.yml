@@ -4,9 +4,13 @@
   become: true
   vars:
     adguard_data_dir: "/adguardhome"
+
     backup_dir_local: "/home/user/Ansible_Mateusz/adguard_backup"
-    backup_dir_ansible: "/root/Ansible_Mateusz/adguard_backup"
+
+    backup_dir_ansible: "/home/user/Ansible_Mateusz/adguard_backup"
+
     date: "{{ lookup('pipe', 'date +%Y-%m-%d_%H-%M-%S') }}"
+
     backup_file: "{{ backup_dir_local }}/adguard_backup_{{ date }}.tar.gz"
 
   tasks:
