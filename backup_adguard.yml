@@ -24,12 +24,15 @@
 
     - name: Ensure backup directory exists on Ansible host
       delegate_to: localhost
+      become: false
       file:
         path: "{{ backup_dir_ansible }}"
         state: directory
         mode: '0755'
 
     - name: Copy backup to Ansible host
+      delegate_to: localhost
+      become: false
       fetch:
         src: "{{ backup_file }}"
         dest: "{{ backup_dir_ansible }}/"
