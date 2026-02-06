@@ -1,0 +1,14 @@
+---
+- name: Update Linux system on AGH
+  hosts: agh
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist

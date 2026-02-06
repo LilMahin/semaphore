@@ -1,0 +1,51 @@
+---
+- name: Install and configure AdGuard Home
+  hosts: linux
+  become: true
+  tasks:
+
+    - name: Install LVM and mdadm
+      apt:
+        name:
+          - lvm2
+          - mdadm
+        state: present
+        update_cache: yes
+
+    - name: Create RAID1 for AdGuard Home
+      command: /sbin/mdadm --create --verbose /dev/md0 --level=1 --raid-devices=2 /dev/sdb /dev/sdc
+      args:
+        creates: /dev/md0
+      become: yes
+
+    - name: Create Physical Volume
+      command: pvcreate /dev/md0
+      args:
+        creates: /dev/md0
+
+    - name: Create Volume Group
+      command: vgcreate adg_vg /dev/md0
+      args:
+        creates: /dev/adg_vg
+
+    - name: Create Logical Volume
+      command: lvcreate -l 100%VG -n adg_lv adg_vg
+      args:
+        creates: /dev/adg_vg/adg_lv
+
+    - name: Format Logical Volume
+      filesystem:
+        fstype: ext4
+        dev: /dev/adg_vg/adg_lv
+
+    - name: Create mount point
+      file:
+        path: /adguardhome
+        state: directory
+
+    - name: Mount Logical Volume
+      mount:
+        path: /adguardhome
+        src: /dev/adg_vg/adg_lv
+        fstype: ext4
+        state: mounted
