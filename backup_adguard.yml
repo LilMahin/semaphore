@@ -2,45 +2,28 @@
 - name: Backup AdGuard Home
   hosts: agh
   become: true
+
   vars:
-    adguard_data_dir: "/adguardhome"
-    backup_dir_local: "/home/user/Ansible_Mateusz/adguard_backup"
-    backup_dir_ansible: "/tmp/adguard_backup"
-    date: "{{ lookup('pipe', 'date +%Y-%m-%d_%H-%M-%S') }}"
-    backup_file: "{{ backup_dir_local }}/adguard_backup_{{ date }}.tar.gz"
+    adguard_data_dir: /adguardhome
+    backup_dir_agh: /home/user/adguard_backup
 
   tasks:
-    - name: Ensure backup directory exists on AGH
-      file:
-        path: "{{ backup_dir_local }}"
+
+    - name: Create backup directory on AGH
+      ansible.builtin.file:
+        path: "{{ backup_dir_agh }}"
         state: directory
+        owner: user
         mode: '0755'
 
-    - name: Create compressed backup of AdGuard Home data
-      archive:
+    - name: Create AdGuard Home backup archive
+      ansible.builtin.archive:
         path: "{{ adguard_data_dir }}"
-        dest: "{{ backup_file }}"
+        dest: "{{ backup_dir_agh }}/adguard_backup.tar.gz"
         format: gz
 
-    - name: Ensure backup directory exists on Ansible host
-      local_action:
-        module: file
-        path: "{{ backup_dir_ansible }}"
-        state: directory
-        mode: '0755'
-
-    - name: Copy backup to Ansible host
-      fetch:
-        src: "{{ backup_file }}"
-        dest: "{{ backup_dir_ansible }}/"
+    - name: Fetch backup to Ansible host (Semaphore container)
+      ansible.builtin.fetch:
+        src: "{{ backup_dir_agh }}/adguard_backup.tar.gz"
+        dest: "./adguard_backups/"
         flat: yes
-
-    - name: List backups on Ansible host
-      local_action:
-        module: shell
-        cmd: "ls -lh {{ backup_dir_ansible }}"
-      register: backup_list
-
-    - name: Show available backups
-      debug:
-        msg: "{{ backup_list.stdout_lines }}"
