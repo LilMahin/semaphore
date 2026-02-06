@@ -1,0 +1,32 @@
+---
+- name: Backup AdGuard Home
+  hosts: agh
+  become: true
+  vars:
+    adguard_data_dir: "/adguardhome"
+    backup_dir_local: "/home/user/Ansible_Mateusz/adguard_backup"
+    date: "{{ lookup('pipe', 'date +%Y-%m-%d_%H-%M-%S') }}"
+    backup_file: "{{ backup_dir_local }}/adguard_backup_{{ date }}.tar.gz"
+
+  tasks:
+    - name: Ensure backup directory exists on AGH
+      file:
+        path: "{{ backup_dir_local }}"
+        state: directory
+        mode: '0755'
+
+    - name: Create compressed backup of AdGuard Home data
+      archive:
+         path: "{{ adguard_data_dir }}"
+         dest: "{{ backup_file }}"
+         format: gz
+
+- name: Fetch backup to Ansible host
+  hosts: agh
+  gather_facts: false
+  tasks:
+    - name: Copy backup to Ansible
+      fetch:
+        src: "{{ backup_file }}"
+        dest: "/root/Ansible_Mateusz/adguard_backup/"
+        flat: yes
