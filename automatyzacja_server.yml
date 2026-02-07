@@ -1,0 +1,86 @@
+---
+- name: Konfiguracja Storage Pool, udziału sieciowego i aplikacji
+  hosts: WINSRV_Napiorkowski
+  gather_facts: false
+  tasks:
+
+    - name: Utwórz Storage Pool z tieringiem
+      ansible.windows.win_storagepool:
+        name: Pool_Napiorkowski
+        physical_disks:
+          - FriendlyName: "VBOX HARDDISK"
+        state: present
+        storage_tier:
+          - name: SSD
+            media_type: SSD
+          - name: HDD
+            media_type: HDD
+
+    - name: Utwórz wirtualny dysk z mirroringiem
+      ansible.windows.win_virtualdisk:
+        pool_name: Pool_Napiorkowski
+        name: VirtualDisk_Napiorkowski
+        size: max
+        resiliency_setting_name: Mirror
+        storage_tier:
+          - name: SSD
+          - name: HDD
+
+    - name: Sformatuj dysk ReFS i przypisz literę F:
+      ansible.windows.win_volume:
+        drive_letter: F
+        filesystem: ReFS
+        size: max
+        state: present
+        path: F:
+
+    - name: Utwórz użytkowników
+      ansible.windows.win_user:
+        name: "{{ item }}"
+        password: Zaq12wsx
+        state: present
+      loop:
+        - "Marek Romanek"
+        - "Jacek Gula"
+
+    - name: Utwórz grupę zabezpieczeń
+      ansible.windows.win_group:
+        name: "Kierownicy_Napiorkowski"
+        state: present
+
+    - name: Dodaj użytkowników do grupy
+      ansible.windows.win_group_membership:
+        name: "Kierownicy_Napiorkowski"
+        members:
+          - "Marek Romanek"
+          - "Jacek Gula"
+        state: present
+
+    - name: Utwórz katalog Projekty na dysku F:
+      ansible.windows.win_file:
+        path: F:\Projekty
+        state: directory
+
+    - name: Udostępnij katalog Projekty_Napiorkowski
+      ansible.windows.win_share:
+        name: "Projekty_Napiorkowski"
+        path: F:\Projekty
+        full_access:
+          - "Kierownicy_Napiorkowski"
+          - "Administrator"
+        state: present
+
+    - name: Zainstaluj 7zip
+      ansible.windows.win_chocolatey:
+        name: 7zip
+        state: present
+
+    - name: Zainstaluj dig
+      ansible.windows.win_chocolatey:
+        name: bind-toolsonly
+        state: present
+
+    - name: Zainstaluj Firefox
+      ansible.windows.win_chocolatey:
+        name: firefox
+        state: present
